@@ -1,0 +1,59 @@
+# create-vacode-app
+
+`vacode-web-template` private repo에서 새 vacode 웹 상품 프로젝트를 만드는 얇은 초기화 CLI입니다.
+
+이 패키지는 public npm에 올릴 수 있습니다. 회사 비밀 코드, 디자인 시스템 소스, 템플릿 파일은 포함하지 않습니다.
+실제 웹 템플릿은 `levercompany/vacode-web-template` private repo에서 가져옵니다.
+
+## 사용법
+
+```bash
+npm create vacode-app@latest customer-tool
+cd customer-tool
+bun run dev
+```
+
+또는:
+
+```bash
+bunx create-vacode-app customer-tool
+```
+
+CLI는 기본적으로 아래 작업을 합니다.
+
+- `git@github.com:levercompany/vacode-web-template.git`의 `main`을 clone합니다.
+- 템플릿 Git 기록을 제거하고 새 Git 저장소로 초기화합니다.
+- `package.json`의 `name`을 상품 폴더 이름에 맞춥니다.
+- `.vacode/template.json`에 사용한 템플릿 repo/ref와 CLI 버전을 기록합니다.
+- 템플릿의 `./setup`을 실행합니다.
+
+## 필요 권한
+
+내부 사용자는 GitHub에서 아래 권한이 필요합니다.
+
+- `levercompany/vacode-web-template` 읽기 권한
+- `levercompany/vacode-design-system` 읽기 권한
+- 로컬 Git 인증, 보통 GitHub SSH key
+
+권한이 없으면 템플릿 clone 또는 디자인 시스템 설치 단계에서 실패합니다.
+
+## 옵션
+
+```bash
+npm create vacode-app@latest customer-tool -- --ref v0.1.3
+npm create vacode-app@latest customer-tool -- --no-setup
+npm create vacode-app@latest customer-tool -- --template git@github.com:levercompany/vacode-web-template.git
+```
+
+환경 변수로 기본값을 바꿀 수 있습니다.
+
+```bash
+VACODE_WEB_TEMPLATE_REPO=git@github.com:levercompany/vacode-web-template.git
+VACODE_WEB_TEMPLATE_REF=main
+```
+
+## 보안 기준
+
+- 이 CLI에 token, SSH key, Supabase key, Vercel token을 넣지 않습니다.
+- private repo URL은 노출될 수 있지만, 실제 코드는 GitHub 권한이 있어야 받을 수 있습니다.
+- 템플릿과 디자인 시스템 업데이트는 각 private repo에서 관리합니다.
