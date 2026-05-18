@@ -4,7 +4,7 @@
   "description": "Create vacode web product repos from the private vacode web template.",
   "type": "module",
   "bin": {
-    "create-vacode-app": "./bin/create-vacode-app.js"
+    "create-vacode-app": "bin/create-vacode-app.js"
   },
   "files": [
     "bin",
