@@ -21,7 +21,8 @@ bunx create-vacode-app customer-tool
 
 CLI는 기본적으로 아래 작업을 합니다.
 
-- `git@github.com:levercompany/vacode-web-template.git`의 `main`을 clone합니다.
+- `git@github.com:levercompany/vacode-web-template.git`의 최신 SemVer tag를 찾습니다.
+- 검증된 최신 tag를 clone합니다.
 - 템플릿 Git 기록을 제거하고 새 Git 저장소로 초기화합니다.
 - `package.json`의 `name`을 상품 폴더 이름에 맞춥니다.
 - `.vacode/template.json`에 사용한 템플릿 repo/ref와 CLI 버전을 기록합니다.
@@ -41,6 +42,7 @@ CLI는 기본적으로 아래 작업을 합니다.
 
 ```bash
 npm create vacode-app@latest customer-tool -- --ref v0.1.3
+npm create vacode-app@latest customer-tool -- --ref main
 npm create vacode-app@latest customer-tool -- --no-setup
 npm create vacode-app@latest customer-tool -- --template git@github.com:levercompany/vacode-web-template.git
 ```
@@ -49,8 +51,12 @@ npm create vacode-app@latest customer-tool -- --template git@github.com:levercom
 
 ```bash
 VACODE_WEB_TEMPLATE_REPO=git@github.com:levercompany/vacode-web-template.git
-VACODE_WEB_TEMPLATE_REF=main
+VACODE_WEB_TEMPLATE_REF=v0.1.3
 ```
+
+기본값은 `main`이 아닙니다.
+`vacode-web-template`의 최신 `vX.Y.Z` tag를 자동으로 사용합니다.
+템플릿 `main`에 새 변경이 push되어도 tag를 찍기 전까지 새 상품 생성에는 반영되지 않습니다.
 
 ## 보안 기준
 

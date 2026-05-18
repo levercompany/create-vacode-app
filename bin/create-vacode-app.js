@@ -12,7 +12,7 @@ const packageJson = require("../package.json");
 const defaultTemplateRepo =
   process.env.VACODE_WEB_TEMPLATE_REPO ?? "git@github.com:levercompany/vacode-web-template.git";
 const defaultTemplateHttpsRepo = "https://github.com/levercompany/vacode-web-template.git";
-const defaultTemplateRef = process.env.VACODE_WEB_TEMPLATE_REF ?? "main";
+const defaultTemplateRef = process.env.VACODE_WEB_TEMPLATE_REF;
 
 const root = process.cwd();
 
@@ -42,9 +42,9 @@ async function main() {
   await ensureTargetDirectory(targetDir);
 
   const templateRepo = options.template ?? defaultTemplateRepo;
-  const templateRef = options.ref ?? defaultTemplateRef;
 
   step("vacode 웹 템플릿 가져오기");
+  const templateRef = await resolveTemplateRef({ explicitRef: options.ref, repo: templateRepo });
   await cloneTemplate({ ref: templateRef, repo: templateRepo, targetDir });
   await removeTemplateGitHistory(targetDir);
 
@@ -225,6 +225,60 @@ async function cloneTemplate({ ref, repo, targetDir }) {
   );
 }
 
+async function resolveTemplateRef({ explicitRef, repo }) {
+  if (explicitRef) {
+    return explicitRef;
+  }
+
+  if (defaultTemplateRef) {
+    return defaultTemplateRef;
+  }
+
+  const candidateRepos = await getTemplateRepoCandidates(repo);
+
+  for (const candidateRepo of candidateRepos) {
+    const tag = await findLatestTemplateTag(candidateRepo);
+
+    if (tag) {
+      ok(`템플릿 버전: ${tag}`);
+      return tag;
+    }
+  }
+
+  throw new Error(
+    [
+      "vacode-web-template의 release tag를 찾을 수 없습니다.",
+      "검증된 템플릿 버전만 사용하기 위해 기본값은 최신 SemVer tag입니다.",
+      "",
+      "권장 확인:",
+      "  gh auth status",
+      "  gh auth setup-git",
+      "  git ls-remote --tags git@github.com:levercompany/vacode-web-template.git",
+      "",
+      "개발 중 main을 직접 사용해야 하면 명시적으로 실행하세요:",
+      "  npm create vacode-app@latest my-product -- --ref main",
+    ].join("\n"),
+  );
+}
+
+async function findLatestTemplateTag(repo) {
+  const result = await capture("git", ["ls-remote", "--tags", "--refs", repo, "v*"]);
+
+  if (!result.ok) {
+    return undefined;
+  }
+
+  const tags = result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => line.trim().split(/\s+/)[1] ?? "")
+    .map((ref) => ref.replace(/^refs\/tags\//, ""))
+    .filter(isSemverTag)
+    .sort(compareSemverTags);
+
+  return tags.at(-1);
+}
+
 async function getTemplateRepoCandidates(repo) {
   const candidates = [repo];
 
@@ -334,6 +388,59 @@ async function tryRun(command, args, options = {}) {
   return { ok: code === 0 };
 }
 
+async function capture(command, args, options = {}) {
+  let stdout = "";
+  let stderr = "";
+
+  const child = spawn(commandName(command), args, {
+    cwd: options.cwd ?? root,
+    env: process.env,
+    shell: process.platform === "win32",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  child.stdout?.on("data", (chunk) => {
+    stdout += chunk.toString();
+  });
+
+  child.stderr?.on("data", (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  const code = await new Promise((resolve) => {
+    child.on("close", resolve);
+  });
+
+  return { ok: code === 0, stderr, stdout };
+}
+
+function isSemverTag(value) {
+  return /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value);
+}
+
+function compareSemverTags(left, right) {
+  const leftParts = parseSemverTag(left);
+  const rightParts = parseSemverTag(right);
+
+  for (let index = 0; index < 3; index += 1) {
+    const diff = leftParts[index] - rightParts[index];
+
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+
+  return left.localeCompare(right);
+}
+
+function parseSemverTag(value) {
+  return value
+    .replace(/^v/, "")
+    .split(/[+-]/)[0]
+    .split(".")
+    .map((part) => Number.parseInt(part, 10));
+}
+
 async function exists(path) {
   try {
     await access(path, constants.F_OK);
@@ -379,7 +486,7 @@ create-vacode-app ${packageJson.version}
   bunx create-vacode-app <상품-폴더>
 
 옵션:
-  --ref <git-ref>        사용할 vacode-web-template branch/tag/commit (기본: ${defaultTemplateRef})
+  --ref <git-ref>        사용할 vacode-web-template branch/tag/commit (기본: 최신 SemVer tag)
   --template <git-url>   사용할 템플릿 repo (기본: ${defaultTemplateRepo})
   --no-setup             템플릿 복사 후 ./setup 실행을 건너뜀
   -y, --yes              대화형 질문 없이 실행
