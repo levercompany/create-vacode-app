@@ -11,6 +11,7 @@ const packageJson = require("../package.json");
 
 const defaultTemplateRepo =
   process.env.VACODE_WEB_TEMPLATE_REPO ?? "git@github.com:levercompany/vacode-web-template.git";
+const defaultTemplateHttpsRepo = "https://github.com/levercompany/vacode-web-template.git";
 const defaultTemplateRef = process.env.VACODE_WEB_TEMPLATE_REF ?? "main";
 
 const root = process.cwd();
@@ -183,33 +184,64 @@ async function ensureTargetDirectory(targetDir) {
 }
 
 async function cloneTemplate({ ref, repo, targetDir }) {
-  const shallowArgs = ["clone", "--depth", "1", "--branch", ref, repo, targetDir];
-  const shallowResult = await tryRun("git", shallowArgs);
+  const candidateRepos = await getTemplateRepoCandidates(repo);
 
-  if (shallowResult.ok) {
-    return;
+  for (const candidateRepo of candidateRepos) {
+    const shallowResult = await tryCloneTemplateRef({ ref, repo: candidateRepo, targetDir });
+
+    if (shallowResult.ok) {
+      return;
+    }
+
+    await rm(targetDir, { force: true, recursive: true });
+
+    const cloneResult = await tryRun("git", ["clone", candidateRepo, targetDir]);
+
+    if (!cloneResult.ok) {
+      continue;
+    }
+
+    const checkoutResult = await tryRun("git", ["-C", targetDir, "checkout", ref]);
+
+    if (checkoutResult.ok) {
+      return;
+    }
+
+    await rm(targetDir, { force: true, recursive: true });
   }
 
-  await rm(targetDir, { force: true, recursive: true });
+  throw new Error(
+    [
+      "vacode-web-template private repo를 받을 수 없습니다.",
+      "GitHub에서 levercompany/vacode-web-template 읽기 권한과 로컬 Git 인증을 확인하세요.",
+      "",
+      "권장 확인:",
+      "  gh auth status",
+      "  gh auth setup-git",
+      "  git ls-remote git@github.com:levercompany/vacode-web-template.git main",
+      "",
+      `실행한 repo: ${repo}`,
+    ].join("\n"),
+  );
+}
 
-  const cloneResult = await tryRun("git", ["clone", repo, targetDir]);
+async function getTemplateRepoCandidates(repo) {
+  const candidates = [repo];
 
-  if (!cloneResult.ok) {
-    throw new Error(
-      [
-        "vacode-web-template private repo를 받을 수 없습니다.",
-        "GitHub에서 levercompany/vacode-web-template 읽기 권한과 로컬 Git 인증을 확인하세요.",
-        "",
-        `실행한 repo: ${repo}`,
-      ].join("\n"),
-    );
+  if (repo === defaultTemplateRepo && (await hasGitHubCliAuth())) {
+    candidates.push(defaultTemplateHttpsRepo);
   }
 
-  const checkoutResult = await tryRun("git", ["-C", targetDir, "checkout", ref]);
+  return [...new Set(candidates)];
+}
 
-  if (!checkoutResult.ok) {
-    throw new Error(`템플릿 ref를 찾을 수 없습니다: ${ref}`);
-  }
+async function hasGitHubCliAuth() {
+  const result = await tryRun("gh", ["auth", "status"]);
+  return result.ok;
+}
+
+async function tryCloneTemplateRef({ ref, repo, targetDir }) {
+  return tryRun("git", ["clone", "--depth", "1", "--branch", ref, repo, targetDir]);
 }
 
 async function removeTemplateGitHistory(targetDir) {
