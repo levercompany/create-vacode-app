@@ -8,6 +8,8 @@
 ## 사용법
 
 ```bash
+gh auth login
+gh auth setup-git
 npm create vacode-app@latest customer-tool
 cd customer-tool
 bun run dev
@@ -21,7 +23,7 @@ bunx create-vacode-app customer-tool
 
 CLI는 기본적으로 아래 작업을 합니다.
 
-- `git@github.com:levercompany/vacode-web-template.git`의 최신 SemVer tag를 찾습니다.
+- `https://github.com/levercompany/vacode-web-template.git`의 최신 SemVer tag를 찾습니다.
 - 검증된 최신 tag를 clone합니다.
 - 템플릿 Git 기록을 제거하고 새 Git 저장소로 초기화합니다.
 - `package.json`의 `name`을 상품 폴더 이름에 맞춥니다.
@@ -34,14 +36,15 @@ CLI는 기본적으로 아래 작업을 합니다.
 
 - `levercompany/vacode-web-template` 읽기 권한
 - `levercompany/vacode-design-system` 읽기 권한
-- 로컬 Git 인증, 보통 GitHub SSH key
+- GitHub CLI 로그인: `gh auth login && gh auth setup-git`
 
 권한이 없으면 템플릿 clone 또는 디자인 시스템 설치 단계에서 실패합니다.
+SSH 인증은 GitHub CLI를 쓰지 않는 개발자용 fallback입니다.
 
 ## 옵션
 
 ```bash
-npm create vacode-app@latest customer-tool -- --ref v0.1.3
+npm create vacode-app@latest customer-tool -- --ref v0.1.5
 npm create vacode-app@latest customer-tool -- --ref main
 npm create vacode-app@latest customer-tool -- --no-setup
 npm create vacode-app@latest customer-tool -- --template git@github.com:levercompany/vacode-web-template.git
@@ -50,8 +53,8 @@ npm create vacode-app@latest customer-tool -- --template git@github.com:levercom
 환경 변수로 기본값을 바꿀 수 있습니다.
 
 ```bash
-VACODE_WEB_TEMPLATE_REPO=git@github.com:levercompany/vacode-web-template.git
-VACODE_WEB_TEMPLATE_REF=v0.1.3
+VACODE_WEB_TEMPLATE_REPO=https://github.com/levercompany/vacode-web-template.git
+VACODE_WEB_TEMPLATE_REF=v0.1.5
 ```
 
 기본값은 `main`이 아닙니다.

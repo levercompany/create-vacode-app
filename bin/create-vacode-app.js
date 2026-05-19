@@ -9,9 +9,9 @@ import readline from "node:readline/promises";
 const require = createRequire(import.meta.url);
 const packageJson = require("../package.json");
 
-const defaultTemplateRepo =
-  process.env.VACODE_WEB_TEMPLATE_REPO ?? "git@github.com:levercompany/vacode-web-template.git";
 const defaultTemplateHttpsRepo = "https://github.com/levercompany/vacode-web-template.git";
+const defaultTemplateSshRepo = "git@github.com:levercompany/vacode-web-template.git";
+const defaultTemplateRepo = process.env.VACODE_WEB_TEMPLATE_REPO ?? defaultTemplateHttpsRepo;
 const defaultTemplateRef = process.env.VACODE_WEB_TEMPLATE_REF;
 
 const root = process.cwd();
@@ -213,11 +213,14 @@ async function cloneTemplate({ ref, repo, targetDir }) {
   throw new Error(
     [
       "vacode-web-template private repo를 받을 수 없습니다.",
-      "GitHub에서 levercompany/vacode-web-template 읽기 권한과 로컬 Git 인증을 확인하세요.",
+      "GitHub에서 levercompany/vacode-web-template 읽기 권한과 GitHub CLI 인증을 확인하세요.",
       "",
       "권장 확인:",
       "  gh auth status",
       "  gh auth setup-git",
+      "  git ls-remote https://github.com/levercompany/vacode-web-template.git main",
+      "",
+      "SSH를 이미 쓰는 개발자는 아래도 가능합니다:",
       "  git ls-remote git@github.com:levercompany/vacode-web-template.git main",
       "",
       `실행한 repo: ${repo}`,
@@ -253,7 +256,7 @@ async function resolveTemplateRef({ explicitRef, repo }) {
       "권장 확인:",
       "  gh auth status",
       "  gh auth setup-git",
-      "  git ls-remote --tags git@github.com:levercompany/vacode-web-template.git",
+      "  git ls-remote --tags https://github.com/levercompany/vacode-web-template.git",
       "",
       "개발 중 main을 직접 사용해야 하면 명시적으로 실행하세요:",
       "  npm create vacode-app@latest my-product -- --ref main",
@@ -282,7 +285,9 @@ async function findLatestTemplateTag(repo) {
 async function getTemplateRepoCandidates(repo) {
   const candidates = [repo];
 
-  if (repo === defaultTemplateRepo && (await hasGitHubCliAuth())) {
+  if (repo === defaultTemplateRepo) {
+    candidates.push(defaultTemplateSshRepo);
+  } else if (repo === defaultTemplateSshRepo && (await hasGitHubCliAuth())) {
     candidates.push(defaultTemplateHttpsRepo);
   }
 
@@ -496,5 +501,6 @@ create-vacode-app ${packageJson.version}
 필요 권한:
   levercompany/vacode-web-template 읽기 권한
   levercompany/vacode-design-system 읽기 권한
+  GitHub CLI 인증: gh auth login && gh auth setup-git
 `);
 }
