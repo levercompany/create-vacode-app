@@ -42,7 +42,7 @@ CLI는 기본적으로 아래 작업을 합니다.
 SSH 인증은 GitHub CLI를 쓰지 않는 개발자용 fallback입니다.
 GitHub 계정 비밀번호는 입력하지 않습니다.
 인증이 없으면 CLI는 username/password 프롬프트를 띄우지 않고 `gh auth login`과 `gh auth setup-git` 안내를 보여줍니다.
-SSH 키 비밀번호를 묻는 환경도 CLI 안에서는 대기하지 않고 실패합니다. SSH를 쓰려면 키를 등록하거나 `gh auth` 흐름을 먼저 끝내세요.
+macOS Keychain 또는 SSH 키 비밀번호를 묻는 환경도 CLI 안에서는 대기하지 않고 실패합니다. SSH를 쓰려면 키를 등록하거나 `gh auth` 흐름을 먼저 끝내세요.
 
 ## 옵션
 

@@ -18,6 +18,12 @@ const nonInteractiveGitEnv = {
   GIT_SSH_COMMAND: "ssh -o BatchMode=yes",
   GIT_TERMINAL_PROMPT: "0",
 };
+const templateGitConfigArgs = [
+  "-c",
+  "credential.helper=",
+  "-c",
+  "credential.https://github.com.helper=!gh auth git-credential",
+];
 
 const root = process.cwd();
 
@@ -200,7 +206,7 @@ async function cloneTemplate({ ref, repo, targetDir }) {
 
     await rm(targetDir, { force: true, recursive: true });
 
-    const cloneResult = await tryRun("git", ["clone", candidateRepo, targetDir], {
+    const cloneResult = await tryRun("git", templateGitArgs(["clone", candidateRepo, targetDir]), {
       env: nonInteractiveGitEnv,
     });
 
@@ -208,9 +214,13 @@ async function cloneTemplate({ ref, repo, targetDir }) {
       continue;
     }
 
-    const checkoutResult = await tryRun("git", ["-C", targetDir, "checkout", ref], {
-      env: nonInteractiveGitEnv,
-    });
+    const checkoutResult = await tryRun(
+      "git",
+      templateGitArgs(["-C", targetDir, "checkout", ref]),
+      {
+        env: nonInteractiveGitEnv,
+      },
+    );
 
     if (checkoutResult.ok) {
       return;
@@ -227,7 +237,7 @@ async function cloneTemplate({ ref, repo, targetDir }) {
       "",
       "참고:",
       "- GitHub 계정 비밀번호를 입력하지 마세요.",
-      "- Git username/password와 SSH passphrase 프롬프트는 이 CLI에서 비활성화합니다.",
+      "- Git username/password, macOS Keychain, SSH passphrase 프롬프트는 이 CLI에서 비활성화합니다.",
       "- 이미 로그인되어 있고 권한이 있으면 이 단계는 묻지 않고 통과합니다.",
       "",
       `실행한 repo: ${repo}`,
@@ -292,7 +302,7 @@ async function resolveTemplateRef({ explicitRef, repo }) {
 }
 
 async function findLatestTemplateTag(repo) {
-  const result = await capture("git", ["ls-remote", "--tags", "--refs", repo, "v*"], {
+  const result = await capture("git", templateGitArgs(["ls-remote", "--tags", "--refs", repo, "v*"]), {
     env: nonInteractiveGitEnv,
   });
 
@@ -329,7 +339,7 @@ async function hasGitHubCliAuth() {
 }
 
 async function tryCloneTemplateRef({ ref, repo, targetDir }) {
-  return tryRun("git", ["clone", "--depth", "1", "--branch", ref, repo, targetDir], {
+  return tryRun("git", templateGitArgs(["clone", "--depth", "1", "--branch", ref, repo, targetDir]), {
     env: nonInteractiveGitEnv,
   });
 }
@@ -494,6 +504,10 @@ function commandName(command) {
   return `${command}.cmd`;
 }
 
+function templateGitArgs(args) {
+  return [...templateGitConfigArgs, ...args];
+}
+
 function commandEnv(options = {}) {
   return {
     ...process.env,
@@ -542,6 +556,6 @@ create-vacode-app ${packageJson.version}
   GitHub CLI 인증: gh auth login && gh auth setup-git
 
 GitHub 계정 비밀번호는 입력하지 마세요.
-인증이 없으면 username/password나 SSH passphrase를 묻지 않고 안내 메시지로 실패합니다.
+인증이 없으면 username/password, macOS Keychain, SSH passphrase를 묻지 않고 안내 메시지로 실패합니다.
 `);
 }
