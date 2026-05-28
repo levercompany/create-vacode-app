@@ -76,9 +76,11 @@ VACODE_WEB_TEMPLATE_REF=v0.1.5
 릴리즈용 npm token을 저장하지 않습니다.
 
 처음 한 번 npm package 설정에서 Trusted Publisher를 연결합니다.
+`--allow-publish`를 지원하는 최신 npm이 필요합니다.
 
 ```bash
-npm trust github create-vacode-app --repo levercompany/create-vacode-app --file publish.yml -y
+npm install -g npm@latest
+npm trust github create-vacode-app --repo levercompany/create-vacode-app --file publish.yml --allow-publish -y
 npm trust list create-vacode-app
 ```
 
