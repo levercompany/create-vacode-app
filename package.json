@@ -12,8 +12,10 @@
   ],
   "scripts": {
     "check": "node --check bin/create-vacode-app.js",
+    "release:check": "node scripts/check-release.js",
     "smoke": "node bin/create-vacode-app.js --help",
-    "pack:dry-run": "npm pack --dry-run"
+    "pack:dry-run": "npm pack --dry-run",
+    "verify": "npm run check && npm run smoke && npm run pack:dry-run"
   },
   "repository": {
     "type": "git",

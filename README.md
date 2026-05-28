@@ -69,3 +69,37 @@ VACODE_WEB_TEMPLATE_REF=v0.1.5
 - 이 CLI에 token, SSH key, Supabase key, Vercel token을 넣지 않습니다.
 - private repo URL은 노출될 수 있지만, 실제 코드는 GitHub 권한이 있어야 받을 수 있습니다.
 - 템플릿과 디자인 시스템 업데이트는 각 private repo에서 관리합니다.
+
+## 릴리즈
+
+`create-vacode-app`은 GitHub Actions와 npm Trusted Publishing으로 배포합니다.
+릴리즈용 npm token을 저장하지 않습니다.
+
+처음 한 번 npm package 설정에서 Trusted Publisher를 연결합니다.
+
+```bash
+npm trust github create-vacode-app --repo levercompany/create-vacode-app --file publish.yml -y
+npm trust list create-vacode-app
+```
+
+권한 오류가 나면 npm package settings에서 직접 연결합니다.
+
+- Provider: GitHub Actions
+- Organization or user: `levercompany`
+- Repository: `create-vacode-app`
+- Workflow filename: `publish.yml`
+- Allowed actions: `npm publish`
+- Environment name: 비움
+
+릴리즈할 때는 버전을 올리고 tag를 push합니다.
+
+```bash
+npm run verify
+npm version patch
+git push origin main --follow-tags
+```
+
+`vX.Y.Z` tag가 push되면 `.github/workflows/publish.yml`이 실행되고 npm에 publish합니다.
+workflow는 tag와 `package.json` version이 다르면 실패합니다.
+
+로컬에서 `npm publish`는 긴급 상황에서만 사용합니다.
