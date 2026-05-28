@@ -13,6 +13,11 @@ const defaultTemplateHttpsRepo = "https://github.com/levercompany/vacode-web-tem
 const defaultTemplateSshRepo = "git@github.com:levercompany/vacode-web-template.git";
 const defaultTemplateRepo = process.env.VACODE_WEB_TEMPLATE_REPO ?? defaultTemplateHttpsRepo;
 const defaultTemplateRef = process.env.VACODE_WEB_TEMPLATE_REF;
+const nonInteractiveGitEnv = {
+  GCM_INTERACTIVE: "Never",
+  GIT_SSH_COMMAND: "ssh -o BatchMode=yes",
+  GIT_TERMINAL_PROMPT: "0",
+};
 
 const root = process.cwd();
 
@@ -195,13 +200,17 @@ async function cloneTemplate({ ref, repo, targetDir }) {
 
     await rm(targetDir, { force: true, recursive: true });
 
-    const cloneResult = await tryRun("git", ["clone", candidateRepo, targetDir]);
+    const cloneResult = await tryRun("git", ["clone", candidateRepo, targetDir], {
+      env: nonInteractiveGitEnv,
+    });
 
     if (!cloneResult.ok) {
       continue;
     }
 
-    const checkoutResult = await tryRun("git", ["-C", targetDir, "checkout", ref]);
+    const checkoutResult = await tryRun("git", ["-C", targetDir, "checkout", ref], {
+      env: nonInteractiveGitEnv,
+    });
 
     if (checkoutResult.ok) {
       return;
@@ -213,19 +222,40 @@ async function cloneTemplate({ ref, repo, targetDir }) {
   throw new Error(
     [
       "vacode-web-template private repo를 받을 수 없습니다.",
-      "GitHub에서 levercompany/vacode-web-template 읽기 권한과 GitHub CLI 인증을 확인하세요.",
       "",
-      "권장 확인:",
-      "  gh auth status",
-      "  gh auth setup-git",
-      "  git ls-remote https://github.com/levercompany/vacode-web-template.git main",
+      ...githubAccessHelp({ repo }),
       "",
-      "SSH를 이미 쓰는 개발자는 아래도 가능합니다:",
-      "  git ls-remote git@github.com:levercompany/vacode-web-template.git main",
+      "참고:",
+      "- GitHub 계정 비밀번호를 입력하지 마세요.",
+      "- Git username/password와 SSH passphrase 프롬프트는 이 CLI에서 비활성화합니다.",
+      "- 이미 로그인되어 있고 권한이 있으면 이 단계는 묻지 않고 통과합니다.",
       "",
       `실행한 repo: ${repo}`,
     ].join("\n"),
   );
+}
+
+function githubAccessHelp({ repo }) {
+  return [
+    "GitHub에서 아래 private repo 읽기 권한과 GitHub CLI 인증을 확인하세요.",
+    "",
+    "필요 권한:",
+    "  levercompany/vacode-web-template 읽기 권한",
+    "  levercompany/vacode-design-system 읽기 권한",
+    "",
+    "처음 한 번만 실행:",
+    "  gh auth login",
+    "  gh auth setup-git",
+    "",
+    "SSH를 이미 쓰는 개발자는 아래도 가능합니다:",
+    "  git ls-remote git@github.com:levercompany/vacode-web-template.git main",
+    "",
+    "확인:",
+    "  gh auth status",
+    "  git ls-remote https://github.com/levercompany/vacode-web-template.git main",
+    "",
+    `현재 repo 설정: ${repo}`,
+  ];
 }
 
 async function resolveTemplateRef({ explicitRef, repo }) {
@@ -253,10 +283,7 @@ async function resolveTemplateRef({ explicitRef, repo }) {
       "vacode-web-template의 release tag를 찾을 수 없습니다.",
       "검증된 템플릿 버전만 사용하기 위해 기본값은 최신 SemVer tag입니다.",
       "",
-      "권장 확인:",
-      "  gh auth status",
-      "  gh auth setup-git",
-      "  git ls-remote --tags https://github.com/levercompany/vacode-web-template.git",
+      ...githubAccessHelp({ repo }),
       "",
       "개발 중 main을 직접 사용해야 하면 명시적으로 실행하세요:",
       "  npm create vacode-app@latest my-product -- --ref main",
@@ -265,7 +292,9 @@ async function resolveTemplateRef({ explicitRef, repo }) {
 }
 
 async function findLatestTemplateTag(repo) {
-  const result = await capture("git", ["ls-remote", "--tags", "--refs", repo, "v*"]);
+  const result = await capture("git", ["ls-remote", "--tags", "--refs", repo, "v*"], {
+    env: nonInteractiveGitEnv,
+  });
 
   if (!result.ok) {
     return undefined;
@@ -300,7 +329,9 @@ async function hasGitHubCliAuth() {
 }
 
 async function tryCloneTemplateRef({ ref, repo, targetDir }) {
-  return tryRun("git", ["clone", "--depth", "1", "--branch", ref, repo, targetDir]);
+  return tryRun("git", ["clone", "--depth", "1", "--branch", ref, repo, targetDir], {
+    env: nonInteractiveGitEnv,
+  });
 }
 
 async function removeTemplateGitHistory(targetDir) {
@@ -364,7 +395,7 @@ function toPackageName(value) {
 async function run(command, args, options = {}) {
   const child = spawn(commandName(command), args, {
     cwd: options.cwd ?? root,
-    env: process.env,
+    env: commandEnv(options),
     shell: process.platform === "win32",
     stdio: "inherit",
   });
@@ -381,7 +412,7 @@ async function run(command, args, options = {}) {
 async function tryRun(command, args, options = {}) {
   const child = spawn(commandName(command), args, {
     cwd: options.cwd ?? root,
-    env: process.env,
+    env: commandEnv(options),
     shell: process.platform === "win32",
     stdio: "ignore",
   });
@@ -399,7 +430,7 @@ async function capture(command, args, options = {}) {
 
   const child = spawn(commandName(command), args, {
     cwd: options.cwd ?? root,
-    env: process.env,
+    env: commandEnv(options),
     shell: process.platform === "win32",
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -463,6 +494,13 @@ function commandName(command) {
   return `${command}.cmd`;
 }
 
+function commandEnv(options = {}) {
+  return {
+    ...process.env,
+    ...(options.env ?? {}),
+  };
+}
+
 function step(message) {
   console.log(`\n[create-vacode-app] ${message}`);
 }
@@ -502,5 +540,8 @@ create-vacode-app ${packageJson.version}
   levercompany/vacode-web-template 읽기 권한
   levercompany/vacode-design-system 읽기 권한
   GitHub CLI 인증: gh auth login && gh auth setup-git
+
+GitHub 계정 비밀번호는 입력하지 마세요.
+인증이 없으면 username/password나 SSH passphrase를 묻지 않고 안내 메시지로 실패합니다.
 `);
 }
