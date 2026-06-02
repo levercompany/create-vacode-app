@@ -206,6 +206,50 @@ function commandExists(command) {
   return result.status === 0;
 }
 
+function compareVersions(left, right) {
+  const leftParts = left.split(".").map((part) => Number.parseInt(part, 10));
+  const rightParts = right.split(".").map((part) => Number.parseInt(part, 10));
+
+  for (let index = 0; index < 3; index += 1) {
+    const diff = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (diff !== 0) return diff;
+  }
+
+  return 0;
+}
+
+function latestPackageVersion() {
+  const result = spawnSync("npm", ["view", "create-vacode-app", "version", "--silent"], {
+    encoding: "utf8",
+    env: process.env,
+    shell: false,
+    stdio: ["ignore", "pipe", "ignore"],
+    timeout: 2500,
+  });
+
+  if (result.status !== 0) return undefined;
+
+  const version = result.stdout.trim();
+  return /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version) ? version : undefined;
+}
+
+function showUpdateNotice() {
+  const latestVersion = latestPackageVersion();
+
+  if (!latestVersion || compareVersions(latestVersion, packageJson.version) <= 0) {
+    return;
+  }
+
+  console.log(
+    [
+      `[vacode-new] 새 버전이 있습니다: ${latestVersion} (현재 ${packageJson.version})`,
+      "업데이트하려면 실행하세요:",
+      "  npm i -g create-vacode-app@latest",
+      "",
+    ].join("\n"),
+  );
+}
+
 function setupLooksComplete(projectPath) {
   return exists(join(projectPath, ".env")) && exists(join(projectPath, "node_modules"));
 }
@@ -271,6 +315,8 @@ async function main() {
     installShortcut();
     return;
   }
+
+  showUpdateNotice();
 
   const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
   const config = readConfig();
