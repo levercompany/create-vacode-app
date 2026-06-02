@@ -16,6 +16,14 @@ if (packageJson.private) {
   fail("package.json must not set private=true for npm release");
 }
 
+if (packageJson.bin?.["create-vacode-app"] !== "bin/create-vacode-app.js") {
+  fail("package.json bin.create-vacode-app must point to bin/create-vacode-app.js");
+}
+
+if (packageJson.bin?.["vacode-new"] !== "bin/vacode-new.js") {
+  fail("package.json bin.vacode-new must point to bin/vacode-new.js");
+}
+
 if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(packageJson.version)) {
   fail(`package.json version must be SemVer, got ${packageJson.version}`);
 }

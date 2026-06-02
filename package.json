@@ -4,16 +4,17 @@
   "description": "Create vacode web product repos from the private vacode web template.",
   "type": "module",
   "bin": {
-    "create-vacode-app": "bin/create-vacode-app.js"
+    "create-vacode-app": "bin/create-vacode-app.js",
+    "vacode-new": "bin/vacode-new.js"
   },
   "files": [
     "bin",
     "README.md"
   ],
   "scripts": {
-    "check": "node --check bin/create-vacode-app.js",
+    "check": "node --check bin/create-vacode-app.js && node --check bin/vacode-new.js",
     "release:check": "node scripts/check-release.js",
-    "smoke": "node bin/create-vacode-app.js --help",
+    "smoke": "node bin/create-vacode-app.js --help && node bin/vacode-new.js --help && node bin/vacode-new.js --version",
     "pack:dry-run": "npm pack --dry-run",
     "verify": "npm run check && npm run smoke && npm run pack:dry-run"
   },

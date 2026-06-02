@@ -7,6 +7,30 @@
 
 ## 사용법
 
+바이브코더가 처음 쓰는 컴퓨터에서는 아래를 한 번만 실행합니다.
+
+```bash
+gh auth login
+gh auth setup-git
+npm i -g create-vacode-app
+vacode-new --install-shortcut
+```
+
+`vacode-new --install-shortcut`은 macOS Desktop에 `Vacode New.command`를 만듭니다.
+그 다음부터는 `Vacode New.command`를 더블클릭하고 Terminal에 나오는 질문에 프로젝트 이름과 저장 폴더를 입력하면 됩니다.
+기본 저장 폴더는 `~/dev`이고, 생성이 끝나면 VS Code로 새 프로젝트를 엽니다.
+
+터미널에서 바로 만들 때는 아래처럼 실행합니다.
+
+```bash
+vacode-new customer-tool
+```
+
+`vacode-new`는 내부에서 `create-vacode-app`을 실행합니다.
+템플릿 clone, Git 초기화, `package.json` 이름 변경, `.vacode/template.json` 기록, 템플릿의 `./setup` 실행은 `create-vacode-app`이 담당합니다.
+
+직접 `create-vacode-app`을 실행해야 할 때는 아래 명령을 씁니다.
+
 ```bash
 gh auth login
 gh auth setup-git
