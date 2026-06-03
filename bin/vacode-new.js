@@ -105,7 +105,7 @@ function printHelp() {
 처음 한 번:
   gh auth login
   gh auth setup-git
-  npm i -g create-vacode-app
+  npm i -g create-vacode-app@latest
   vacode-new --install-shortcut
 
 사용법:
