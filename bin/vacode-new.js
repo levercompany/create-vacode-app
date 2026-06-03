@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 const packageJson = require("../package.json");
 
 const configPath = join(homedir(), ".config", "vacode", "create-app.json");
-const defaultProjectsRoot = join(homedir(), "dev");
+const defaultProjectsRoot = join(homedir(), "VacodeProjects");
 const createVacodeAppPath = fileURLToPath(new URL("./create-vacode-app.js", import.meta.url));
 const vacodeNewPath = fileURLToPath(import.meta.url);
 
@@ -111,7 +111,7 @@ function printHelp() {
 사용법:
   vacode-new
   vacode-new customer-tool
-  vacode-new --name customer-tool --root ~/dev --yes
+  vacode-new --name customer-tool --root ~/VacodeProjects --yes
 
 옵션:
   --install-shortcut  Desktop에 Vacode New.command를 생성
@@ -361,7 +361,7 @@ async function main() {
       }
 
       const shouldCreateRoot =
-        args.yes || !rl || (await promptYesNo(rl, `저장 폴더가 없습니다. 만들까요? ${projectsRoot}`));
+        args.yes || !rl || (await promptYesNo(rl, `저장 폴더가 없습니다: ${projectsRoot}\n만들까요?`));
 
       if (shouldCreateRoot) {
         mkdirSync(projectsRoot, { recursive: true });

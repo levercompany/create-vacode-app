@@ -18,7 +18,8 @@ vacode-new --install-shortcut
 
 `vacode-new --install-shortcut`은 macOS Desktop에 `Vacode New.command`를 만듭니다.
 그 다음부터는 `Vacode New.command`를 더블클릭하고 Terminal에 나오는 질문에 프로젝트 이름과 저장 폴더를 입력하면 됩니다.
-기본 저장 폴더는 `~/dev`이고, 생성이 끝나면 VS Code로 새 프로젝트를 엽니다.
+기본 저장 폴더는 `~/VacodeProjects`이고, 생성이 끝나면 VS Code로 새 프로젝트를 엽니다.
+저장 폴더를 바꾸면 그 값을 다음 실행 기본값으로 기억합니다.
 
 터미널에서 바로 만들 때는 아래처럼 실행합니다.
 

@@ -1,6 +1,6 @@
 {
   "name": "create-vacode-app",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Create vacode web product repos from the private vacode web template.",
   "type": "module",
   "bin": {
