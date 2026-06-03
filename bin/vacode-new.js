@@ -233,21 +233,48 @@ function latestPackageVersion() {
   return /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version) ? version : undefined;
 }
 
-function showUpdateNotice() {
-  const latestVersion = latestPackageVersion();
+async function maybeUpdateCli({ args, rl }) {
+  if (process.env.VACODE_NEW_SKIP_UPDATE === "1") return;
 
-  if (!latestVersion || compareVersions(latestVersion, packageJson.version) <= 0) {
+  const latestVersion = latestPackageVersion();
+  if (!latestVersion || compareVersions(latestVersion, packageJson.version) <= 0) return;
+
+  console.log(`[vacode-new] 새 버전이 있습니다: ${latestVersion} (현재 ${packageJson.version})`);
+
+  if (args.yes || !rl) {
+    printManualUpdateCommand();
     return;
   }
 
-  console.log(
-    [
-      `[vacode-new] 새 버전이 있습니다: ${latestVersion} (현재 ${packageJson.version})`,
-      "업데이트하려면 실행하세요:",
-      "  npm i -g create-vacode-app@latest",
-      "",
-    ].join("\n"),
-  );
+  const shouldUpdate = await promptYesNo(rl, "지금 업데이트할까요?");
+  if (!shouldUpdate) return;
+
+  const updateResult = spawnSync("npm", ["i", "-g", "create-vacode-app@latest"], {
+    env: process.env,
+    shell: false,
+    stdio: "inherit",
+  });
+
+  if (updateResult.status !== 0) {
+    console.warn("[vacode-new] 업데이트에 실패했습니다. 현재 버전으로 계속 진행합니다.");
+    printManualUpdateCommand();
+    return;
+  }
+
+  console.log("\n[vacode-new] 업데이트 완료. 새 버전으로 다시 실행합니다.\n");
+
+  const restartResult = spawnSync(process.execPath, [vacodeNewPath, ...process.argv.slice(2)], {
+    cwd: process.cwd(),
+    env: { ...process.env, VACODE_NEW_SKIP_UPDATE: "1" },
+    shell: false,
+    stdio: "inherit",
+  });
+
+  process.exit(restartResult.status ?? 1);
+}
+
+function printManualUpdateCommand() {
+  console.log(["업데이트하려면 실행하세요:", "  npm i -g create-vacode-app@latest", ""].join("\n"));
 }
 
 function setupLooksComplete(projectPath) {
@@ -316,8 +343,6 @@ async function main() {
     return;
   }
 
-  showUpdateNotice();
-
   const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
   const config = readConfig();
   const rl = isInteractive
@@ -325,6 +350,8 @@ async function main() {
     : undefined;
 
   try {
+    await maybeUpdateCli({ args, rl });
+
     let projectName = args.name;
     while (!projectName && rl) {
       projectName = await promptText(rl, "프로젝트 이름");

@@ -29,7 +29,9 @@ vacode-new customer-tool
 
 `vacode-new`는 내부에서 `create-vacode-app`을 실행합니다.
 템플릿 clone, Git 초기화, `package.json` 이름 변경, `.vacode/template.json` 기록, 템플릿의 `./setup` 실행은 `create-vacode-app`이 담당합니다.
-새 버전이 있으면 `vacode-new`가 시작할 때 업데이트 명령을 안내하지만, 자동으로 전역 패키지를 바꾸지는 않습니다.
+새 버전이 있으면 `vacode-new`가 시작할 때 업데이트할지 묻습니다.
+업데이트에 동의하면 `npm i -g create-vacode-app@latest`를 실행한 뒤 새 버전으로 다시 시작합니다.
+비대화형 실행이나 `--yes` 실행에서는 멈추지 않고 업데이트 명령만 안내합니다.
 
 직접 `create-vacode-app`을 실행해야 할 때는 아래 명령을 씁니다.
 
